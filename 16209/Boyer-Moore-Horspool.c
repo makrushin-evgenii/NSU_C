@@ -4,9 +4,11 @@
 #include <string.h>
 #include <locale.h>
 
-#define MIN_CHAR 0
+
 #define MAX_CHAR 256
+#define MAX_NEEDLE 80
 #define BLOCK_SIZE 1000
+
 
 int my_memcmp(unsigned char *buf1, unsigned char *buf2, int count, int zero_point) {
 	while ((*(buf1 + count) == *(buf2 + count)) && (count > 0)) {
@@ -17,6 +19,7 @@ int my_memcmp(unsigned char *buf1, unsigned char *buf2, int count, int zero_poin
 	return count ? 0 : 1;
 }
 
+
 int main(void) {
 
 	setlocale(LC_ALL, "Russian");
@@ -24,16 +27,15 @@ int main(void) {
 
 
 	/* Input */
-	unsigned char needle[32];
+	unsigned char needle[MAX_NEEDLE];
 	char *source = (char *)malloc(BLOCK_SIZE);
 
 	gets(needle);
 
 	int shift = 0;
-	int count_read = fread(source, 1, BLOCK_SIZE, stdin);
+	int current_slice_len = fread(source, sizeof(char), BLOCK_SIZE, stdin);
 
 	int needle_len = strlen(needle);
-	int source_len = strlen(source);
 
 	int i, j, k, bm_bc[MAX_CHAR];
 	unsigned char ch, lastch;
@@ -49,20 +51,20 @@ int main(void) {
 	i = 0;
 
 	//Если считали меньше килобайта, то это последний блок
-	while (count_read == BLOCK_SIZE || i <= count_read - needle_len) {
-
+	while (current_slice_len == BLOCK_SIZE || i <= current_slice_len - needle_len) {
+		
 		//выход за границу - читаем новый блок
-		if (i + needle_len > count_read) {
+		if (i + needle_len > current_slice_len) {
+			
 			int buf_begin = i;
-			int buf_end = BLOCK_SIZE;
-			int buf_len = buf_end - buf_begin;
+			int buf_len = BLOCK_SIZE - buf_begin;
 
 			//перенос буфера в начало source
 			for (k = 0; k < buf_len; ++k)
 				source[k] = source[buf_begin + k];
 
 			//новые данные
-			count_read = fread(source + buf_len, 1, BLOCK_SIZE - buf_len, stdin) + buf_len;
+			current_slice_len = fread(source + buf_len, sizeof(char), BLOCK_SIZE - buf_len, stdin) + buf_len;
 
 			//сдвиг счетчиков
 			i = 0;
@@ -71,9 +73,9 @@ int main(void) {
 
 		ch = source[i + needle_len - 1];
 
-		printf("%d ", i + needle_len + shift); // сравнение последних также необходимо вывести
+		printf("%d ", i + needle_len + shift); // сравнение последних символов также необходимо вывести
 		if (ch == lastch)
-			my_memcmp(&source[i], needle, needle_len - 1, i + shift); //my_memcmp сравнивает и выводит остальные, начиная с последнего
+			my_memcmp(&source[i], needle, needle_len - 1, i + shift); //my_memcmp сравнивает остальные символы
 
 		i += bm_bc[ch];
 	}
