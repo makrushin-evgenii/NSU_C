@@ -240,7 +240,6 @@ int main() {
 	if ((stack != NULL) && (stack[0].is_operation && stack[0].value == 0))
 		printf("syntax error\n");
 
-
 	free(stack);
 
 	return 0;
