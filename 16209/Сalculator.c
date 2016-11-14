@@ -81,7 +81,7 @@ struct Item* infix2postfix_notation() {
 	char input[INPUT_SIZE];
 	gets(input);
 
-	size_t stackPos = 0;
+	size_t stack_pos = 0;
 	size_t operators_stack_len = 0;
 
 	// Тип последнего обработаного элемента (определены как #define LAST_*)
@@ -99,7 +99,7 @@ struct Item* infix2postfix_notation() {
 			}
 			pos--;
 			struct Item item = { number, NUMBER };
-			stack[stackPos++] = item;
+			stack[stack_pos++] = item;
 
 			last_item_type = LAST_NUMBER;
 		}
@@ -113,7 +113,7 @@ struct Item* infix2postfix_notation() {
 			if (last_item_type == LAST_START_FILE || last_item_type == LAST_OPEN_BRACKET) {
 				if (input[pos] == ADD || input[pos] == SUB) { // Корректная обработка отрицательных чисел: - x .. и .. (- x ..
 					struct Item item = { 0, NUMBER };
-					stack[stackPos++] = item;
+					stack[stack_pos++] = item;
 				}
 				else // Нет левого аргумента: * x .. и .. ( * x ..
 					AHTUNG
@@ -124,7 +124,7 @@ struct Item* infix2postfix_notation() {
 				// Проверяем приоритеты операций
 				if (get_operation_priority(input[pos]) <= get_operation_priority(operators_stack[operators_stack_len - 1])) {
 					struct Item item = { operators_stack[operators_stack_len - 1], OPERATION };
-					stack[stackPos++] = item;
+					stack[stack_pos++] = item;
 					operators_stack_len--;
 				}
 			operators_stack[operators_stack_len++] = input[pos];
@@ -142,7 +142,7 @@ struct Item* infix2postfix_notation() {
 					break;
 				}
 				struct Item item = { operators_stack[operators_stack_len - 1], OPERATION };
-				stack[stackPos++] = item;
+				stack[stack_pos++] = item;
 				operators_stack_len--;
 			}
 			if (!found) // До конца стека операций не было найдено открывающихся скобок, значит это ошибка
@@ -166,13 +166,13 @@ struct Item* infix2postfix_notation() {
 			if (operators_stack[operators_stack_len - 1] == OPEN_BRACKET)
 				AHTUNG
 				struct Item item = { operators_stack[operators_stack_len - 1], OPERATION };
-			stack[stackPos++] = item;
+			stack[stack_pos++] = item;
 			operators_stack_len--;
 		}
 
 	// Помечаем конец стека
 	struct Item item = { END, OPERATION };
-	stack[stackPos] = item;
+	stack[stack_pos] = item;
 
 	return stack;
 }
@@ -191,38 +191,38 @@ size_t stack_size(struct Item *stack) {
 void postfix_calc (struct Item *stack) {
 	size_t size = stack_size(stack);
 
-	struct Item calcStack[22];
-	size_t calcPos = 0;
+	struct Item calculation[22];
+	size_t calculation_pos = 0;
 	int a, b, result;
 
 	for (size_t i = 0; i < size; i++) {
 		if (!stack[i].is_operation) {
-			calcStack[calcPos++].value = stack[i].value;
+			calculation[calculation_pos++].value = stack[i].value;
 		}
 		else {
-			b = calcStack[--calcPos].value;
-			a = calcStack[--calcPos].value;
+			b = calculation[--calculation_pos].value;
+			a = calculation[--calculation_pos].value;
 
 			switch (stack[i].value) {
 			case ADD:
-				calcStack[calcPos++].value = a + b;
+				calculation[calculation_pos++].value = a + b;
 				break;
 			case SUB:
-				calcStack[calcPos++].value = a - b;
+				calculation[calculation_pos++].value = a - b;
 				break;
 			case MUL:
-				calcStack[calcPos++].value = a * b;
+				calculation[calculation_pos++].value = a * b;
 				break;
 			case DIV:
 				if (b == 0)
 					ALARM
-					calcStack[calcPos++].value = a / b;
+					calculation[calculation_pos++].value = a / b;
 				break;
 			}
 		}
 	}
 
-	result = calcStack[0].value;
+	result = calculation[0].value;
 
 	printf("%d\n", result);
 }
