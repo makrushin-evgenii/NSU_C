@@ -242,5 +242,6 @@ int main() {
 
 	free(stack);
 
+	
 	return 0;
 }
