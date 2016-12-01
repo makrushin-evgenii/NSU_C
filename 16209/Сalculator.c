@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <math.h>
 
 /** Обозначает границу стека */
 #define END 0
@@ -12,6 +13,7 @@
 #define SUB '-'
 #define MUL '*'
 #define DIV '/'
+#define POW '^'
 
 /** Операция или число(для поля is_operation) */
 #define OPERATION true
@@ -23,6 +25,10 @@
 #define INPUT_SIZE 1024
 #define MAX_STACK_SIZE 1024
 #define MAX_OPERATION_STACK_SIZE 1024
+
+/* Очередность операций */
+#define LEFT 0
+#define RIGHT 1
 
 /** Последние считанные лексемы */
 enum last_item {
@@ -44,7 +50,7 @@ struct Item {
 };
 
 bool is_operator(char c) {
-	return c == ADD || c == SUB || c == MUL || c == DIV;
+	return (c == ADD) || (c == SUB) || (c == MUL) || (c == DIV) || (c == POW);
 }
 
 bool is_number(char c) {
@@ -53,6 +59,8 @@ bool is_number(char c) {
 
 int get_operation_priority(char operation) {
 	switch (operation) {
+	case POW:
+		return 2;
 	case MUL:
 	case DIV:
 		return 1;
@@ -63,39 +71,45 @@ int get_operation_priority(char operation) {
 	return -1;
 }
 
+int get_operation_associativity(char operation) {
+	switch (operation) {
+	case POW:
+		return RIGHT;
+	default:
+		return LEFT;
+	}
+	return -1;
+}
 
-/* Сообщение об ошибке */
-#define AHTUNG {printf("syntax error\n"); return NULL;}
-#define ALARM {printf("division by zero\n"); return;}
+
+/* Сообщения об ошибке */
+#define SYNTAX_ERROR {printf("syntax error\n"); return NULL;}
+#define DIVISION_ERROR {printf("division by zero\n"); return;}
 
 /** Считывает со входного потока, формирует стек и возвращает его.
-* Если при формировании происходит ошибка, кричит AHTUNG и завершает работу.
+* Если при формировании происходит ошибка, то выдает сообщение об ошибке завершает работу.
 */
-struct Item* infix2postfix_notation() {
+struct Item* infix2postfix_notation(char *input) {
 	struct Item *stack = malloc(MAX_STACK_SIZE * sizeof(struct Item));
 
 	// Стек операций
 	char operators_stack[MAX_OPERATION_STACK_SIZE];
 
-	// Считываем входную строку.
-	char input[INPUT_SIZE];
-	gets(input);
-
 	size_t stack_pos = 0;
 	size_t operators_stack_len = 0;
 
-	// Тип последнего обработаного элемента (определены как #define LAST_*)
+	// Тип последнего обработаного элемента
 	enum last_item last_item_type = LAST_START_FILE;
 
 	size_t pos = 0;
 	while (input[pos] != '\0') {
 		if (is_number(input[pos])) { // Считывание числа
 			if (last_item_type == LAST_NUMBER || last_item_type == LAST_CLOSE_BRACKET) // Нет оператором м-ду числами: x y .. или .. ) x ..
-				AHTUNG
-				int number = 0;
+				SYNTAX_ERROR;
+			int number = 0;
 			while (is_number(input[pos])) {
 				number = number * 10 + (input[pos] - '0');
-				pos++;
+				++pos;
 			}
 			pos--;
 			struct Item item = { number, NUMBER };
@@ -105,8 +119,8 @@ struct Item* infix2postfix_notation() {
 		}
 		else if (input[pos] == OPEN_BRACKET) { // Начало выражения в скобках
 			if (last_item_type == LAST_NUMBER) // Нет оператора после числа: .. x ( ..
-				AHTUNG
-				operators_stack[operators_stack_len++] = input[pos];
+				SYNTAX_ERROR;
+			operators_stack[operators_stack_len++] = input[pos];
 			last_item_type = LAST_OPEN_BRACKET;
 		}
 		else if (is_operator(input[pos])) { // Оператор +, -, *, /
@@ -116,26 +130,33 @@ struct Item* infix2postfix_notation() {
 					stack[stack_pos++] = item;
 				}
 				else // Нет левого аргумента: * x .. и .. ( * x ..
-					AHTUNG
+					SYNTAX_ERROR;
 			}
 			if (last_item_type == LAST_OPERATION) // Два оператора подряд: .. + * ..
-				AHTUNG
-
-				// Проверяем приоритеты операций
-				if (get_operation_priority(input[pos]) <= get_operation_priority(operators_stack[operators_stack_len - 1])) {
-					struct Item item = { operators_stack[operators_stack_len - 1], OPERATION };
-					stack[stack_pos++] = item;
-					operators_stack_len--;
-				}
+				SYNTAX_ERROR;
+			// Проверяем приоритеты операций
+			if (
+				// ... (если оператор o1 ассоциированный, либо лево-ассоциированный) приоритет o1 меньше либо равен приоритету оператора, находящегося на вершине стека ...
+				(get_operation_associativity(input[pos]) == LEFT && 
+				get_operation_priority(input[pos]) <= get_operation_priority(operators_stack[operators_stack_len - 1])) 
+				||
+				// ...(если оператор o1 право-ассоциированный) приоритет o1 меньше приоритета оператора, находящегося на вершине стека ...
+				(get_operation_associativity(input[pos]) == RIGHT &&
+				get_operation_priority(input[pos]) < get_operation_priority(operators_stack[operators_stack_len - 1]))
+				) {
+				struct Item item = { operators_stack[operators_stack_len - 1], OPERATION };
+				stack[stack_pos++] = item;
+				--operators_stack_len;
+			}
 			operators_stack[operators_stack_len++] = input[pos];
 			last_item_type = LAST_OPERATION;
 		}
 		else if (input[pos] == CLOSE_BRACKET) { // Конец выражения в скобках
 			if (last_item_type == LAST_OPEN_BRACKET) // Пустая скобка: .. ( ) .. 
-				AHTUNG
-				if (last_item_type == LAST_OPERATION) // Нет правого аргумента: .. ( x + ) ..
-					AHTUNG
-					bool found = false;
+				SYNTAX_ERROR;
+			if (last_item_type == LAST_OPERATION) // Нет правого аргумента: .. ( x + ) ..
+				SYNTAX_ERROR;
+			bool found = false;
 			while (operators_stack_len > 0) {
 				if (operators_stack[operators_stack_len - 1] == OPEN_BRACKET) {
 					found = true;
@@ -146,25 +167,25 @@ struct Item* infix2postfix_notation() {
 				operators_stack_len--;
 			}
 			if (!found) // До конца стека операций не было найдено открывающихся скобок, значит это ошибка
-				AHTUNG
-				operators_stack_len--;
+				SYNTAX_ERROR;
+			operators_stack_len--;
 			last_item_type = LAST_CLOSE_BRACKET;
 		}
 		else if (input[pos] == ' ') { // Пропускаем пробелы
 
 		}
 		else // Неизвестный символ
-			AHTUNG
-			pos++;
+			SYNTAX_ERROR;
+			++pos;
 	}
 
 	if (last_item_type == LAST_OPERATION) // Нет правого аргумента: "... 1 * "
-		AHTUNG
+		SYNTAX_ERROR;
 
 		// В конце считывания закидываем все операции, оставшиеся на стеке операций, в основной стек
 		while (operators_stack_len > 0) {
 			if (operators_stack[operators_stack_len - 1] == OPEN_BRACKET)
-				AHTUNG
+				SYNTAX_ERROR;
 				struct Item item = { operators_stack[operators_stack_len - 1], OPERATION };
 			stack[stack_pos++] = item;
 			operators_stack_len--;
@@ -181,14 +202,14 @@ struct Item* infix2postfix_notation() {
 size_t stack_size(struct Item *stack) {
 	size_t i = 0;
 	while (!stack[i].is_operation || stack[i].value) {
-		i++;
+		++i;
 	}
 
 	return i;
 }
 
 /** Вычисляет результат выражения*/
-void postfix_calc (struct Item *stack) {
+void postfix_calc(struct Item *stack) {
 	size_t size = stack_size(stack);
 
 	struct Item calculation[22];
@@ -215,8 +236,11 @@ void postfix_calc (struct Item *stack) {
 				break;
 			case DIV:
 				if (b == 0)
-					ALARM
+					DIVISION_ERROR
 					calculation[calculation_pos++].value = a / b;
+				break;
+			case POW:
+				calculation[calculation_pos++].value = pow(a, b);
 				break;
 			}
 		}
@@ -231,17 +255,23 @@ void postfix_calc (struct Item *stack) {
 int main() {
 	//freopen("input.txt", "r", stdin);
 
-	struct Item *stack = infix2postfix_notation();
+	/* Input */
+	char input[INPUT_SIZE];
+	gets(input);
 
+	/* Conversion */
+	struct Item *stack = infix2postfix_notation(input);
+
+	/* Calculation */
 	if ((stack != NULL) && !(stack[0].is_operation && stack[0].value == 0)) {
-		postfix_calc (stack);
+		postfix_calc(stack);
 	}
 
 	if ((stack != NULL) && (stack[0].is_operation && stack[0].value == 0))
 		printf("syntax error\n");
 
+
 	free(stack);
 
-	
 	return 0;
 }
