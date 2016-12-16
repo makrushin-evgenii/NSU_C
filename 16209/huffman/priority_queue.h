@@ -1,40 +1,47 @@
-#ifndef _PRIORITY_QUEUE_H_
-#define _PRIORITY_QUEUE_H_
 /* размер очереди */
 #define SIZE_PRIORITY_QUEUE 128
 
-/* TODO: fix dohuya definition*/
 /* состояния очереди */
-//const int ok_priority_queue = 0;
-//const int full_priority_queue = 1;
-//const int empty_priority_queue = 2;
+#define PQ_OK 0
+#define PQ_FULL 0
+#define PQ_EMPTY 0
+
 /* переменная ошибок */
-//extern int error_priority_queue;
+extern int pq_error;
 
 /* базовый тип */
 typedef struct {
-	int data;
+	char data;
 	int priority;
-} priority_queue_base_type;
+} pq_base_type;
 
 /* дескриптор */
 typedef struct {
-	priority_queue_base_type buf[SIZE_PRIORITY_QUEUE];
+	pq_base_type buf[SIZE_PRIORITY_QUEUE];
 	unsigned head; /* указатель на хвост */
 } priority_queue;
 
 /* функции работы с очередью */
 
 /**
-*Summary.
-*
-*\param x: ... .
-*\param y: ... .
+*Инициализурет новую очередь по указателю F.
+*\param *F: указатель на новую очередь.
 */
-void init_priority_queue(priority_queue *F);
-void put_priority_queue(priority_queue *F, priority_queue_base_type E);
-void get_priority_queue(priority_queue *F, priority_queue_base_type *E);
-//int is_full_priority_queue(priority_queue *F);
-//int is_empty_priority_queue(priority_queue *F);
+void pq_init(priority_queue *F);
 
-#endif
+/**
+*Добавляет эл-т E в очередь F
+*\param *F: указатель на очередь.
+*\param E: добавляемый эл-т.
+*/
+void pq_insert(priority_queue *F, pq_base_type E);
+
+/**
+*Записывает эл-т с минимальным значением ключа в переменную E, удаляя его из F.
+*\param *F: указатель на очередь.
+*\param  E: переменная, куда будет записан эл-т.
+*/
+void pq_extract_minimum(priority_queue *F, pq_base_type *E);
+
+int pq_is_full(priority_queue *F);
+int pq_is_empty(priority_queue *F);
