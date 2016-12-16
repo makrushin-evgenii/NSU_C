@@ -1,64 +1,61 @@
 #include "priority_queue.h"
 
-/* TODO: fix dohuya definition*/
-/* переменная ошибок */
-//int error_priority_queue;
+int pq_error;
 
-/* инициализация очереди */
-void init_priority_queue(priority_queue *F)
+void pq_init(priority_queue *F)
 {
 	F->head = 0;
-	//error_priority_queue = ok_priority_queue;
+	pq_error = PQ_OK;
 }
 
-void put_priority_queue(priority_queue *F, priority_queue_base_type E)
+void pq_insert(priority_queue *F, pq_base_type E)
 {
-	/*if (is_full_priority_queue(F))
-		return;*/
+	if (pq_is_full(F))
+		return;
 
 	F->buf[F->head] = E;
 	F->head++;
 }
 
-void get_priority_queue(priority_queue *F, priority_queue_base_type *E)
+void pq_extract_minimum(priority_queue *F, pq_base_type *E)
 {
-	/*if (is_empty_priority_queue(F))
-		return;*/
+	if (pq_is_empty(F))
+		return;
 	
-	priority_queue_base_type max = F->buf[0];
+	pq_base_type min = F->buf[0];
 	unsigned max_pos = 0;
 	for (unsigned i = 0; i < F->head; ++i)
 	{
-		if (F->buf[i].priority > max.priority)
+		if (F->buf[i].priority < min.priority)
 		{
-			max = F->buf[i];
+			min = F->buf[i];
 			max_pos = i;
 		}
-		*E = max;
-		F->buf[max_pos] = F->buf[F->head - 1];
-		F->head--;
 	}
 
+	*E = min;
+	F->buf[max_pos] = F->buf[F->head - 1];
+	F->head--;
 }
 
-//int is_full_priority_queue(priority_queue *F)
-//{
-//	if (F->head == SIZE_PRIORITY_QUEUE)
-//	{
-//		error_priority_queue = full_priority_queue;
-//		return 1;
-//	}
-//
-//	return 0;
-//}
-//
-//int is_empty_priority_queue(priority_queue *F)
-//{
-//	if (F->head == 0)
-//	{
-//		error_priority_queue = empty_priority_queue;
-//		return 1;
-//	}
-//
-//	return 0;
-//}
+int pq_is_full(priority_queue *F)
+{
+	if (F->head == SIZE_PRIORITY_QUEUE)
+	{
+		pq_error = PQ_FULL;
+		return 1;
+	}
+
+	return 0;
+}
+
+int pq_is_empty(priority_queue *F)
+{
+	if (F->head == 0)
+	{
+		pq_error = PQ_EMPTY;
+		return 1;
+	}
+
+	return 0;
+}
