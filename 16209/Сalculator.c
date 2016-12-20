@@ -182,14 +182,14 @@ struct Item* infix2postfix_notation(char *input) {
 	if (last_item_type == LAST_OPERATION) // Нет правого аргумента: "... 1 * "
 		SYNTAX_ERROR;
 
-		// В конце считывания закидываем все операции, оставшиеся на стеке операций, в основной стек
-		while (operators_stack_len > 0) {
-			if (operators_stack[operators_stack_len - 1] == OPEN_BRACKET)
-				SYNTAX_ERROR;
-				struct Item item = { operators_stack[operators_stack_len - 1], OPERATION };
-			stack[stack_pos++] = item;
-			operators_stack_len--;
-		}
+	// В конце считывания закидываем все операции, оставшиеся на стеке операций, в основной стек
+	while (operators_stack_len > 0) {
+		if (operators_stack[operators_stack_len - 1] == OPEN_BRACKET)
+			SYNTAX_ERROR;
+		struct Item item = { operators_stack[operators_stack_len - 1], OPERATION };
+		stack[stack_pos++] = item;
+		operators_stack_len--;
+	}
 
 	// Помечаем конец стека
 	struct Item item = { END, OPERATION };
