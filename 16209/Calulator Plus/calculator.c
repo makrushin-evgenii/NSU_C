@@ -1,3 +1,5 @@
+// (づ°ω°)づﾐe★゜・。。・゜゜・。。・゜☆゜・。。・゜゜・。。・゜
+
 #include "calculator.h"
 
 bool is_operator(char c) {
