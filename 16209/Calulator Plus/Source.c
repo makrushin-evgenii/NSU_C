@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
 	{
 		/* Input */
 		char input[INPUT_SIZE];
-		fread(input, INPUT_SIZE, 1, stdin);
+		gets(input);
 
 		/* Exit command*/
 		if (strcmp(input, "exit") == 0)
