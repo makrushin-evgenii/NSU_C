@@ -21,6 +21,7 @@ int main(int argc, char *argv[]) {
 	{
 		/* Input */
 		char input[INPUT_SIZE];
+		// ТРУ программисты используют fread, но для Кирилла я поставил gets, чтобы не спалили что он списал у меня))))0
 		gets(input);
 
 		/* Exit command*/
