@@ -3,61 +3,61 @@
 #include <stdio.h>
 #include <io.h>
 #include <fcntl.h>
-// #include <unistd.h>	// getopt() куда-то пропал
-#include <string.h>		// поэтому перебрал ключи вручную
+// #include <unistd.h>	// getopt() РєСѓРґР°-С‚Рѕ РїСЂРѕРїР°Р»
+#include <string.h>	// РїРѕСЌС‚РѕРјСѓ РїРµСЂРµР±СЂР°Р» РєР»СЋС‡Рё РІСЂСѓС‡РЅСѓСЋ
 
-/* инкремент по модулю n */
+/* РёРЅРєСЂРµРјРµРЅС‚ РїРѕ РјРѕРґСѓР»СЋ n */
 int modular_increment(int *idx, int n)
 {
-	*idx = (*idx + 1) % n;
+    *idx = (*idx + 1) % n;
 }
 
 int main(int argc, char *argv[])
 {
-	char buff[1024];										// читать будем блоками по киловайту
-	const size_t buff_size = sizeof(buff) / sizeof(*buff);	// но  это не точно
-	size_t cur_size = 0;									// сколько смогли прочитать
-	
-	char *key = (argc > 1) ? (argv[1]) : ("some semi-secret key");	// секр. ключ - первый аргумент cmd
-	unsigned key_len = strlen(key);	
-	unsigned idx = 0;	// указывает на символ ключа, с которым будем XOR'ить
+    char buff[1024];						// С‡РёС‚Р°С‚СЊ Р±СѓРґРµРј Р±Р»РѕРєР°РјРё РїРѕ РєРёР»РѕРІР°Р№С‚Сѓ
+    const size_t buff_size = sizeof(buff) / sizeof(*buff);	// РЅРѕ  СЌС‚Рѕ РЅРµ С‚РѕС‡РЅРѕ
+    size_t cur_size = 0;					// СЃРєРѕР»СЊРєРѕ СЃРјРѕРіР»Рё РїСЂРѕС‡РёС‚Р°С‚СЊ
+    
+    char *key = (argc > 1) ? (argv[1]) : ("some semi-secret key");	// СЃРµРєСЂ. РєР»СЋС‡ - РїРµСЂРІС‹Р№ Р°СЂРіСѓРјРµРЅС‚ cmd
+    unsigned key_len = strlen(key);	
+    unsigned idx = 0;	// СѓРєР°Р·С‹РІР°РµС‚ РЅР° СЃРёРјРІРѕР» РєР»СЋС‡Р°, СЃ РєРѕС‚РѕСЂС‹Рј Р±СѓРґРµРј XOR'РёС‚СЊ
 
-	FILE *fin = stdin;		// по умолчанимаю ввод через stdin
-	FILE *fout = stdout;	// по умолчанимаю вывод через stdout
+    FILE *fin = stdin;		// РїРѕ СѓРјРѕР»С‡Р°РЅРёРјР°СЋ РІРІРѕРґ С‡РµСЂРµР· stdin
+    FILE *fout = stdout;	// РїРѕ СѓРјРѕР»С‡Р°РЅРёРјР°СЋ РІС‹РІРѕРґ С‡РµСЂРµР· stdout
 
-	//
-	// Спросить при сдаче: какая альтернатива getopt() под Win?
-	//
+    //
+    // РЎРїСЂРѕСЃРёС‚СЊ РїСЂРё СЃРґР°С‡Рµ: РєР°РєР°СЏ Р°Р»СЊС‚РµСЂРЅР°С‚РёРІР° getopt() РїРѕРґ Win?
+    //
 
-	if (argc > 3)	// введен один ключ -i или -o + его параметр
-	{
-		if (!strcmp(argv[2], "-i"))
-			fin = fopen(argv[3], "r");
-		else if (!strcmp(argv[2], "-o"))
-			fout = fopen(argv[3], "w");
-	}
+    if (argc > 3)	// РІРІРµРґРµРЅ РѕРґРёРЅ РєР»СЋС‡ -i РёР»Рё -o + РµРіРѕ РїР°СЂР°РјРµС‚СЂ
+    {
+        if (!strcmp(argv[2], "-i"))
+            fin = fopen(argv[3], "r");
+        else if (!strcmp(argv[2], "-o"))
+            fout = fopen(argv[3], "w");
+    }
 
-	if (argc > 4)	// введен eщё один ключ -i или -o + его параметр
-	{
-		if (!strcmp(argv[4], "-i"))
-			fin = fopen(argv[5], "r");
-		else if (!strcmp(argv[4], "-o"))
-			fout = fopen(argv[5], "w");
-	}
-	
-	_setmode(_fileno(fin), _O_BINARY);
-	_setmode(_fileno(fout), _O_BINARY);
+    if (argc > 4)	// РІРІРµРґРµРЅ eС‰С‘ РѕРґРёРЅ РєР»СЋС‡ -i РёР»Рё -o + РµРіРѕ РїР°СЂР°РјРµС‚СЂ
+    {
+        if (!strcmp(argv[4], "-i"))
+            fin = fopen(argv[5], "r");
+        else if (!strcmp(argv[4], "-o"))
+            fout = fopen(argv[5], "w");
+    }
+    
+    _setmode(_fileno(fin), _O_BINARY);
+    _setmode(_fileno(fout), _O_BINARY);
 
-	while ((cur_size = fread(buff, 1, buff_size, fin)) > 0)
-	{
-		for (int i = 0; i < cur_size; ++i)
-		{ 
-			buff[i] ^= key[idx];
-			modular_increment(&idx, key_len);
-		}
+    while ((cur_size = fread(buff, 1, buff_size, fin)) > 0)
+    {
+        for (int i = 0; i < cur_size; ++i)
+        { 
+            buff[i] ^= key[idx];
+            modular_increment(&idx, key_len);
+        }
 
-		fwrite(buff, cur_size, 1, fout);
-	}
+        fwrite(buff, cur_size, 1, fout);
+    }
 
-	return 0;
+    return 0;
 }
