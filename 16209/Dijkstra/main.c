@@ -66,8 +66,8 @@ int main(void) {
 
 	// 5000 * (1 + 4 + 4) = 45000 Бт ~ 45 Кб
 	bool used[MAX_NODES];			// пройденые вершины
-	unsigned dist[MAX_NODES];	// от начальной вершины
-	unsigned overflow[MAX_NODES];	// сколько раз расстояние перешагнуло отметку в INT_MAX
+	unsigned dist[MAX_NODES];		// от начальной вершины
+	unsigned overflow[MAX_NODES];		// сколько раз расстояние перешагнуло отметку в INT_MAX
 	int parent[MAX_NODES];			// предки вершин
 
 	for (int i = 0; i < N; i++)
@@ -106,7 +106,7 @@ int main(void) {
 		for (int j = 0; j < N; ++j)
 		{
 			if (g[v][j] == INF)
-				continue;			// нет ребра
+				continue;	// нет ребра
 
 			int to = j;
 			int len = g[v][to];
@@ -174,7 +174,7 @@ int main(void) {
 		printf("%d\n", S + 1);
 	}
 
-	for (int i = 0; i < N; ++i)		// ~матрица смежности
+	for (int i = 0; i < N; ++i)	// ~матрица смежности
 		free(g[i]);
 	free(g);
 
