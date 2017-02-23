@@ -25,19 +25,19 @@ int ranged_input(int low_limit, int upper_limit, char *error_msg)
 }
 
 // сравнивает расстояние до двух вершин
-int dst_cmp(unsigned dist[], unsigned overflow[], unsigned node1, unsigned node2)
+int dst_cmp(unsigned dist[], unsigned overflow[], unsigned node1, unsigned node2, unsigned node1_addition)
 {
 	if (overflow[node1] < overflow[node2])
-		return -1;	// первая ближе
-	else if (overflow[node1] > overflow[node2])
-		return 1;	// первая дальше
-
-	if (dist[node1] < dist[node2])
 		return -1;
-	else if (dist[node1] > dist[node2])
+	else if (overflow[node1] > overflow[node2])
 		return 1;
 
-	return 0;	// равны
+	if (dist[node1] + node1_addition < dist[node2])
+		return -1;
+	else if (dist[node1] + node1_addition > dist[node2])
+		return 1;
+
+	return 0; // равны
 }
 
 int main(void) {
@@ -66,14 +66,14 @@ int main(void) {
 
 	// 5000 * (1 + 4 + 4) = 45000 Бт ~ 45 Кб
 	bool used[MAX_NODES];			// пройденые вершины
-	unsigned from_start[MAX_NODES];	// от начальной вершины
+	unsigned dist[MAX_NODES];	// от начальной вершины
 	unsigned overflow[MAX_NODES];	// сколько раз расстояние перешагнуло отметку в INT_MAX
 	int parent[MAX_NODES];			// предки вершин
 
 	for (int i = 0; i < N; i++)
 	{ 
 		used[i] = false;
-		from_start[i] = (i == S) ? (0) : (INF);
+		dist[i] = (i == S) ? (0) : (INF);
 		overflow[i] = 0;
 		parent[i] = -1;
 	}
@@ -89,25 +89,15 @@ int main(void) {
 		g[edge_to][edge_from] = edge_len;
 	}
 
-	// вывод матрицы смежности 
-	//{
-	//	for (int i = 0; i < N; ++i)
-	//	{
-	//		for (int j = 0; j < N; ++j)
-	//			printf("(%d)%10d", j, g[i][j]);
-	//		printf("\n");
-	//	}
-	//}
-
 	for (int i = 0; i < N; ++i)
 	{
 		// находим непосещенную вершину, минимально удаленную от старта
 		int v = -1;
 		for (int j = 0; j < N; ++j)
-			if (!used[j] && (v == -1 || from_start[j] < from_start[v]))
+			if (!used[j] && (v == -1 || dist[j] < dist[v]))
 				v = j;
 
-		if (from_start[v] == INF)
+		if (dist[v] == INF)
 			break;
 
 		used[v] = true;
@@ -121,16 +111,16 @@ int main(void) {
 			int to = j;
 			int len = g[v][to];
 
-			//if (overflow[v] <= overflow[to] && from_start[v] + len < from_start[to])
-			if (dst_cmp(from_start, overflow, v, to) == -1)
+			//if (dist[v] + len < dist[to])
+			if (dst_cmp(dist, overflow, v, to, len) == -1)
 			{
-				from_start[to] = from_start[v] + len;
+				dist[to] = dist[v] + len;
 				overflow[to] = overflow[v];
 
-				while (from_start[to] > INT_MAX)
+				while (dist[to] > INT_MAX)
 				{
 					++overflow[to];
-					from_start[to] -= INT_MAX;
+					dist[to] -= INT_MAX;
 				}
 
 				parent[to] = v;
@@ -141,24 +131,42 @@ int main(void) {
 	// расстояния от S до каждой вершины графа
 	for (int i = 0; i < N; ++i)
 	{ 
-		if (from_start[i] == INF)
+		if (dist[i] == INF)
 			printf("oo ");
 		else if (overflow[i])
 			printf("INT_MAX+ ");
 		else
-			printf("%d ", from_start[i]);
+			printf("%d ", dist[i]);
 	}
 	printf("\n");
 
-	// вывод кратчайшего пути
-	if (parent[F] == -1)
+	//подсчет кол-ва overflow путей
+	unsigned overflow_count = 0;
+	if (overflow[F])
+	{ 
+		for (int i = 0; i < N; ++i)
+		{
+			if (g[F][i] != INF && dist[i] + g[F][i] > INT_MAX)
+				++overflow_count;
+
+			if (overflow_count >= 2)
+				break;	// двух достаточно
+		}
+	}
+
+	// вывод кратчайшего пути или сообщение об его отсутсвии
+	if (S == F)
+	{
+		printf("%d\n", S + 1);
+	}
+	else if (parent[F] == -1)
 	{ 
 		printf("no path\n");
 	}
-	/*else if (from_start[F] > INT_MAX)
+	else if (overflow[F] && overflow_count >= 2)
 	{ 
 		printf("overflow\n");
-	}*/
+	}
 	else
 	{
 		for (int path_node = F; path_node != S; path_node = parent[path_node])
@@ -166,12 +174,9 @@ int main(void) {
 		printf("%d\n", S + 1);
 	}
 
-
-
 	for (int i = 0; i < N; ++i)		// ~матрица смежности
 		free(g[i]);
 	free(g);
-
 
 	return 0;
 }
