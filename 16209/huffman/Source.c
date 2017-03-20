@@ -7,13 +7,16 @@
 #include <fcntl.h>
 #include <string.h>
 
-#include "pqueue.h"	// Generic priority queue (heap) used by the Apache HTTP Server project. 
+#include "pqueue.h"	// github.com/vy/libpqueue 
 
 typedef struct node_t
 {
 	pqueue_pri_t pri;
 	char val;
 	size_t pos;
+
+	struct node_t *left;
+	struct node_t *right;
 } node_t;
 
 
@@ -70,18 +73,19 @@ int main(int argc, int * argv[])
 
 	pqueue_t *pq;
 	node_t   *ns;
-	node_t   *n;
+	
 
 	ns = (node_t*)malloc(CHAR_COUNT * sizeof(node_t));
 	pq = pqueue_init(CHAR_COUNT, cmp_pri, get_pri, set_pri, get_pos, set_pos);
 	if (!(ns && pq)) return 1;
 
 
-	// сортировка символов по убыванию
+	// Сортировка символов по убыванию
 	for (size_t i = 0; i < CHAR_COUNT; ++i)
 	{
-		ns[i].pri = 0;
 		ns[i].val = i;
+		ns[i].pri = 0;
+		ns[i].right = ns[i].left = NULL;
 	}
 	while (cur_size = fread(buff, 1, buff_size, fin))
 	{
@@ -98,10 +102,24 @@ int main(int argc, int * argv[])
 	}
 	fseek(fin, 0, SEEK_SET);
 
+	// Постройка дерева от листьев к корню
+	while (pqueue_size(pq) > 1)
+	{
+		node_t   *l = pqueue_pop(pq);
+		node_t   *r = pqueue_pop(pq);
 
-	while ((n = pqueue_pop(pq)))
-		printf("pop: %c [%lld]\n", n->val, n->pri);
+		node_t *merged_nodes = (node_t*)malloc(sizeof(node_t));
+		merged_nodes->val = 0;
+		merged_nodes->left = l;
+		merged_nodes->right = r;
+		merged_nodes->pri = l->pri + r->pri;
 
+		pqueue_insert(pq, merged_nodes);
+
+		// printf("pop: %c [%lld]; ", merged_nodes->val, merged_nodes->pri);
+		// printf("pop: %c [%lld]; ", l->val, l->pri);
+		// printf("pop: %c [%lld]\n", r->val, r->pri);
+	}
 
 	pqueue_free(pq);
 	free(ns);
