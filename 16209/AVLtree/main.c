@@ -20,7 +20,7 @@ int main()
 
 	printf("%d\n", avltree_height(tree));
 
-	free(tree);
+	avltree_free(tree);
 
 	return 0;
 }
